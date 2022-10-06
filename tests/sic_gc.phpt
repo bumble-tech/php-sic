@@ -8,8 +8,6 @@ sic.shard_size=1k
 <?php
 
 var_dump(sic_gc());
-var_dump(sic_gc(array()));
-var_dump(sic_gc(""));
 
 var_dump(sic_set("test", 1));
 var_dump(sic_get("test"));
@@ -28,12 +26,6 @@ var_dump(sic_get("test"));
 ?>
 --EXPECTF--
 bool(true)
-
-Warning: sic_gc() expects exactly 0 parameters, 1 given in %s on line %d
-NULL
-
-Warning: sic_gc() expects exactly 0 parameters, 1 given in %s on line %d
-NULL
 bool(true)
 int(1)
 bool(true)

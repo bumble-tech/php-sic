@@ -6,7 +6,7 @@ The extension offers a set of operations to store an integer value
 in the shared memory, associated with a name (string identifier).
 Each value is to be atomically changed.
 
-Supported versions of PHP: 5.0+, 7.0+, 8.0+
+Supported versions of PHP: 7.0+, 8.0+
 
 
 ## The story
