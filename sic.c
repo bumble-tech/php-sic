@@ -689,9 +689,12 @@ PHP_FUNCTION(sic_set)
 	zend_long val;
 	zend_long ttl = 0;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "sl|l", &key, &key_len, &val, &ttl) == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(2, 3)
+		Z_PARAM_STRING(key, key_len)
+		Z_PARAM_LONG(val)
+		Z_PARAM_OPTIONAL
+		Z_PARAM_LONG(ttl)
+	ZEND_PARSE_PARAMETERS_END();
 
 	if (!si_cache.shard_num) {
 		php_error_docref(NULL, E_WARNING, "sic is not enabled");
@@ -715,9 +718,12 @@ PHP_FUNCTION(sic_add)
 	zend_long val;
 	zend_long ttl = 0;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "sl|l", &key, &key_len, &val, &ttl) == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(2, 3)
+		Z_PARAM_STRING(key, key_len)
+		Z_PARAM_LONG(val)
+		Z_PARAM_OPTIONAL
+		Z_PARAM_LONG(ttl)
+	ZEND_PARSE_PARAMETERS_END();
 
 	if (!si_cache.shard_num) {
 		php_error_docref(NULL, E_WARNING, "sic is not enabled");
@@ -739,9 +745,9 @@ PHP_FUNCTION(sic_del)
 	char *key;
 	size_t key_len;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "s", &key, &key_len) == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(1, 1)
+		Z_PARAM_STRING(key, key_len)
+	ZEND_PARSE_PARAMETERS_END();
 
 	if (!si_cache.shard_num) {
 		php_error_docref(NULL, E_WARNING, "sic is not enabled");
@@ -764,9 +770,9 @@ PHP_FUNCTION(sic_get)
 	size_t key_len;
 	zend_long val;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "s", &key, &key_len) == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(1, 1)
+		Z_PARAM_STRING(key, key_len)
+	ZEND_PARSE_PARAMETERS_END();
 
 	if (!si_cache.shard_num) {
 		php_error_docref(NULL, E_WARNING, "sic is not enabled");
@@ -789,9 +795,9 @@ PHP_FUNCTION(sic_exists)
 	size_t key_len;
 	zend_long val;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "s", &key, &key_len) == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(1, 1)
+		Z_PARAM_STRING(key, key_len)
+	ZEND_PARSE_PARAMETERS_END();
 
 	if (!si_cache.shard_num) {
 		php_error_docref(NULL, E_WARNING, "sic is not enabled");
@@ -816,9 +822,12 @@ PHP_FUNCTION(sic_inc)
 	zend_long inc_val = 1, val;
 	zend_long ttl = 0;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "s|ll", &key, &key_len, &inc_val, &ttl) == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(1, 3)
+		Z_PARAM_STRING(key, key_len)
+		Z_PARAM_OPTIONAL
+		Z_PARAM_LONG(inc_val)
+		Z_PARAM_LONG(ttl)
+	ZEND_PARSE_PARAMETERS_END();
 
 	if (!si_cache.shard_num) {
 		php_error_docref(NULL, E_WARNING, "sic is not enabled");
@@ -843,9 +852,12 @@ PHP_FUNCTION(sic_dec)
 	zend_long dec_val = 1, val;
 	zend_long ttl = 0;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "s|ll", &key, &key_len, &dec_val, &ttl) == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(1, 3)
+		Z_PARAM_STRING(key, key_len)
+		Z_PARAM_OPTIONAL
+		Z_PARAM_LONG(dec_val)
+		Z_PARAM_LONG(ttl)
+	ZEND_PARSE_PARAMETERS_END();
 
 	if (!si_cache.shard_num) {
 		php_error_docref(NULL, E_WARNING, "sic is not enabled");
@@ -868,9 +880,11 @@ PHP_FUNCTION(sic_cas)
 	size_t key_len;
 	zend_long old_val, new_val;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "sll", &key, &key_len, &old_val, &new_val) == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(3, 3)
+		Z_PARAM_STRING(key, key_len)
+		Z_PARAM_LONG(old_val)
+		Z_PARAM_LONG(new_val)
+	ZEND_PARSE_PARAMETERS_END();
 
 	if (!si_cache.shard_num) {
 		php_error_docref(NULL, E_WARNING, "sic is not enabled");
@@ -889,10 +903,8 @@ PHP_FUNCTION(sic_cas)
 */
 PHP_FUNCTION(sic_gc)
 {
-
-	if (zend_parse_parameters_none() == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(0, 0)
+	ZEND_PARSE_PARAMETERS_END();
 
 	if (!si_cache.shard_num) {
 		php_error_docref(NULL, E_WARNING, "sic is not enabled");
@@ -912,9 +924,8 @@ PHP_FUNCTION(sic_gc)
 */
 PHP_FUNCTION(sic_info)
 {
-	if (zend_parse_parameters_none() == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(0, 0)
+	ZEND_PARSE_PARAMETERS_END();
 
 	if (!si_cache.shard_num) {
 		php_error_docref(NULL, E_WARNING, "sic is not enabled");
