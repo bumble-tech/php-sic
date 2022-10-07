@@ -1072,21 +1072,21 @@ PHP_MINFO_FUNCTION(sic)
 		}
 
 		char buf[64];
-		sprintf(buf, "%d bytes", total_size);
+		sprintf(buf, "%zu bytes", total_size);
 		php_info_print_table_row(2, "Total cache size", buf);
-		sprintf(buf, "%d bytes", total_unused_size);
+		sprintf(buf, "%zu bytes", total_unused_size);
 		php_info_print_table_row(2, "Total unused size", buf);
-		sprintf(buf, "%d", total_used_cnt);
+		sprintf(buf, "%zu", total_used_cnt);
 		php_info_print_table_row(2, "Total cache items", buf);
-		sprintf(buf, "%d bytes", total_used_size);
+		sprintf(buf, "%zu bytes", total_used_size);
 		php_info_print_table_row(2, "Total used items size", buf);
-		sprintf(buf, "%d", total_free_cnt);
+		sprintf(buf, "%zu", total_free_cnt);
 		php_info_print_table_row(2, "Total freed items", buf);
-		sprintf(buf, "%d bytes", total_free_size);
+		sprintf(buf, "%zu bytes", total_free_size);
 		php_info_print_table_row(2, "Total freed items size", buf);
-		sprintf(buf, "%d", total_frag_err_cnt);
+		sprintf(buf, "%zu", total_frag_err_cnt);
 		php_info_print_table_row(2, "Fragmentation errors", buf);
-		sprintf(buf, "%d", total_oom_err_cnt);
+		sprintf(buf, "%zu", total_oom_err_cnt);
 		php_info_print_table_row(2, "OOM errors", buf);
 	} else {
 		php_info_print_table_row(2, "SIC cache initialized", "no");
