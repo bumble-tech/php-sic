@@ -210,16 +210,23 @@ static pthread_rwlockattr_t sic_lock_attr;
 #define SIC_HANDLE_UNBLOCK_INTERRUPTIONS() \
 	sigprocmask(SIG_SETMASK, &oldmask, NULL)
 
-#define SIC_WLOCK(header) \
+#define SIC_WLOCK_OR_RETURN(header, shard_id) \
 	SIC_HANDLE_BLOCK_INTERRUPTIONS(); \
-	pthread_rwlock_wrlock(&header->lock)
+	if (!sic_shard_lock_write(header, shard_id)) { \
+		SIC_HANDLE_UNBLOCK_INTERRUPTIONS(); \
+		return -1; \
+	}
 
-#define SIC_RLOCK(header) \
+#define SIC_RLOCK_OR_RETURN(header, shard_id) \
 	SIC_HANDLE_BLOCK_INTERRUPTIONS(); \
-	pthread_rwlock_rdlock(&header->lock)
+	if (!sic_shard_lock_read(header, shard_id)) { \
+		SIC_HANDLE_UNBLOCK_INTERRUPTIONS(); \
+		return -1; \
+	}
 
-#define SIC_UNLOCK(header) \
-	pthread_rwlock_unlock(&header->lock); \
+
+#define SIC_UNLOCK(header, shard_id) \
+	sic_shard_lock_unlock(header, shard_id); \
 	SIC_HANDLE_UNBLOCK_INTERRUPTIONS()
 
 int sic_find_shard(zend_long shard_num, const char *key, const size_t key_len, zend_ulong *key_hash) /* {{{ */
@@ -323,14 +330,47 @@ static int _sic_collect_garbage_no_lock(sic_shard_t *shard) { /* {{{ */
 }
 /* }}} */
 
-static int sic_collect_garbage(sic_shard_t *shard) /* {{{ */
+static bool sic_shard_lock_write(sic_shard_header_t *header, int shard_id) /* {{{ */
+{
+	int error = pthread_rwlock_wrlock(&header->lock);
+	if (error != 0) {
+		php_error_docref(NULL, E_WARNING, "pthread_rwlock_wrlock() failed: %d(%s) on shard %d (lock addr: %p)", error, strerror(errno), shard_id, &header->lock);
+		return false;
+	}
+
+	return true;
+} /* }}} */
+
+static bool sic_shard_lock_read(sic_shard_header_t *header, int shard_id) /* {{{ */
+{
+	int error = pthread_rwlock_rdlock(&header->lock);
+	if (error != 0) {
+		php_error_docref(NULL, E_WARNING, "pthread_rwlock_rdlock() failed: %d(%s) on shard %d (lock addr: %p)", error, strerror(errno), shard_id, &header->lock);
+		return false;
+	}
+
+	return true;
+} /* }}} */
+
+static bool sic_shard_lock_unlock(sic_shard_header_t *header, int shard_id) /* {{{ */
+{
+	int error = pthread_rwlock_unlock(&header->lock);
+	if (error != 0) {
+		php_error_docref(NULL, E_WARNING, "pthread_rwlock_unlock() failed: %d(%s) on shard %d (lock addr: %p)", error, strerror(errno), shard_id, &header->lock);
+		return false;
+	}
+
+	return true;
+} /* }}} */
+
+static int sic_collect_garbage(sic_shard_t *shard, int shard_id) /* {{{ */
 {
 	sic_shard_header_t *header = (sic_shard_header_t *)shard->shm;
 	SIC_DECLARE_VARS();
 
-	SIC_WLOCK(header);
+	SIC_WLOCK_OR_RETURN(header, shard_id);
 	int res = _sic_collect_garbage_no_lock(shard);
-	SIC_UNLOCK(header);
+	SIC_UNLOCK(header, shard_id);
 
 	return res;
 }
@@ -452,13 +492,14 @@ int sic_entry_add_set(sic_t *cache, const char *key, const size_t key_len, const
 	shard = &(cache->shards[shard_num]);
 	header = (sic_shard_header_t *)shard->shm;
 
-	SIC_WLOCK(header);
+	SIC_WLOCK_OR_RETURN(header, shard_num);
+
 	/* look for existing entry */
 	sic_entry_t *e = _sic_entry_get_no_lock(header, key, key_len, key_hash, 1);
 	if (e) {
 		if (add) {
 			/* ADD failed, the entry already exists */
-			SIC_UNLOCK(header);
+			SIC_UNLOCK(header, shard_num);
 			return -1;
 		}
 
@@ -469,13 +510,13 @@ int sic_entry_add_set(sic_t *cache, const char *key, const size_t key_len, const
 		} else {
 			ENTRY_TTL(e) = 0;
 		}
-		SIC_UNLOCK(header);
+		SIC_UNLOCK(header, shard_num);
 		return 0;
 	}
 
 	/* create new entry */
 	int res = _sic_entry_create_no_lock(shard, key, key_len, key_hash, ttl, value);
-	SIC_UNLOCK(header);
+	SIC_UNLOCK(header, shard_num);
 	return res;
 }
 /* }}} */
@@ -493,14 +534,15 @@ static int sic_entry_get(sic_t *cache, const char *key, const size_t key_len, ze
 	shard = &(cache->shards[shard_num]);
 	header = (sic_shard_header_t *)shard->shm;
 
-	SIC_RLOCK(header);
+	SIC_RLOCK_OR_RETURN(header, shard_num);
+
 	e = _sic_entry_get_no_lock(header, key, key_len, key_hash, 0);
 	if (e) {
 		*value = ENTRY_VAL(e);
-		SIC_UNLOCK(header);
+		SIC_UNLOCK(header, shard_num);
 		return 0;
 	}
-	SIC_UNLOCK(header);
+	SIC_UNLOCK(header, shard_num);
 	return -1;
 }
 /* }}} */
@@ -518,15 +560,16 @@ static int sic_entry_del(sic_t *cache, const char *key, const size_t key_len) /*
 	shard = &(cache->shards[shard_num]);
 	header = (sic_shard_header_t *)shard->shm;
 
-	SIC_WLOCK(header);
+	SIC_WLOCK_OR_RETURN(header, shard_num);
+
 	e = _sic_entry_get_no_lock(header, key, key_len, key_hash, 1);
 	if (e) {
 		LIST_REMOVE(header->used, e);
 		LIST_ADD(header->free, e);
-		SIC_UNLOCK(header);
+		SIC_UNLOCK(header, shard_num);
 		return 0;
 	}
-	SIC_UNLOCK(header);
+	SIC_UNLOCK(header, shard_num);
 	return -1;
 }
 /* }}} */
@@ -544,13 +587,14 @@ static int sic_entry_inc_dec(sic_t *cache, const char *key, const size_t key_len
 	shard = &(cache->shards[shard_num]);
 	header = (sic_shard_header_t *)shard->shm;
 
-	SIC_WLOCK(header);
+	SIC_WLOCK_OR_RETURN(header, shard_num);
+
 	/* look for existing value */
 	e = _sic_entry_get_no_lock(header, key, key_len, key_hash, 1);
 	if (e) {
 		ENTRY_VAL(e) += inc_dec;
 		*value = ENTRY_VAL(e);
-		SIC_UNLOCK(header);
+		SIC_UNLOCK(header, shard_num);
 		return 0;
 	}
 
@@ -558,7 +602,7 @@ static int sic_entry_inc_dec(sic_t *cache, const char *key, const size_t key_len
 	int res = _sic_entry_create_no_lock(shard, key, key_len, key_hash, ttl, inc_dec);
 	/* set initial value */
 	*value = inc_dec;
-	SIC_UNLOCK(header);
+	SIC_UNLOCK(header, shard_num);
 	return res;
 }
 /* }}} */
@@ -576,18 +620,19 @@ static int sic_entry_cas(sic_t *cache, const char *key, const size_t key_len, co
 	shard = &(cache->shards[shard_num]);
 	header = (sic_shard_header_t *)shard->shm;
 
-	SIC_WLOCK(header);
+	SIC_WLOCK_OR_RETURN(header, shard_num);
+
 	/* look for existing value */
 	e = _sic_entry_get_no_lock(header, key, key_len, key_hash, 1);
 	if (e) {
 		if (ENTRY_VAL(e) == old_val) {
 			ENTRY_VAL(e) = new_val;
-			SIC_UNLOCK(header);
+			SIC_UNLOCK(header, shard_num);
 			return 0;
 		}
 	}
 
-	SIC_UNLOCK(header);
+	SIC_UNLOCK(header, shard_num);
 	return -1;
 }
 /* }}} */
@@ -913,7 +958,7 @@ PHP_FUNCTION(sic_gc)
 
 	zend_long i;
 	for (i = 0; i < si_cache.shard_num; i++) {
-		sic_collect_garbage(&si_cache.shards[i]);
+		sic_collect_garbage(&si_cache.shards[i], i);
 	}
 	RETURN_TRUE;
 }
