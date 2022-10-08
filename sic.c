@@ -35,6 +35,11 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/mman.h>
+#if PHP_VERSION_ID >= 80000
+# include "sic_arginfo.h"
+#else
+# include "sic_legacy_arginfo.h"
+#endif
 
 ZEND_DECLARE_MODULE_GLOBALS(sic)
 
@@ -1052,80 +1057,12 @@ PHP_MINFO_FUNCTION(sic)
 }
 /* }}} */
 
-/* {{{ arginfo */
-ZEND_BEGIN_ARG_INFO_EX(arginfo_sic_set, 0, 0, 2)
-    ZEND_ARG_INFO(0, key)
-    ZEND_ARG_INFO(0, value)
-    ZEND_ARG_INFO(0, ttl)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_sic_add, 0, 0, 2)
-    ZEND_ARG_INFO(0, key)
-    ZEND_ARG_INFO(0, value)
-    ZEND_ARG_INFO(0, ttl)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_sic_get, 0, 0, 1)
-    ZEND_ARG_INFO(0, key)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_sic_exists, 0, 0, 1)
-    ZEND_ARG_INFO(0, key)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_sic_inc, 0, 0, 1)
-    ZEND_ARG_INFO(0, key)
-    ZEND_ARG_INFO(0, inc_value)
-    ZEND_ARG_INFO(0, ttl)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_sic_dec, 0, 0, 1)
-    ZEND_ARG_INFO(0, key)
-    ZEND_ARG_INFO(0, dec_value)
-    ZEND_ARG_INFO(0, ttl)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_sic_cas, 0, 0, 3)
-    ZEND_ARG_INFO(0, key)
-    ZEND_ARG_INFO(0, old_value)
-    ZEND_ARG_INFO(0, new_value)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_sic_del, 0, 0, 1)
-    ZEND_ARG_INFO(0, key)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_sic_gc, 0, 0, 0)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_sic_info, 0, 0, 0)
-ZEND_END_ARG_INFO()
-/* }}} */
-
-
-/* {{{ sic_functions[]
- */
-const zend_function_entry sic_functions[] = {
-	PHP_FE(sic_set,		arginfo_sic_set)
-	PHP_FE(sic_add,		arginfo_sic_add)
-	PHP_FE(sic_get,		arginfo_sic_get)
-	PHP_FE(sic_exists,	arginfo_sic_exists)
-	PHP_FE(sic_inc,		arginfo_sic_inc)
-	PHP_FE(sic_dec,		arginfo_sic_dec)
-	PHP_FE(sic_cas,		arginfo_sic_cas)
-	PHP_FE(sic_del,		arginfo_sic_del)
-	PHP_FE(sic_gc,		arginfo_sic_gc)
-	PHP_FE(sic_info,	arginfo_sic_info)
-	PHP_FE_END
-};
-/* }}} */
-
 /* {{{ sic_module_entry
  */
 zend_module_entry sic_module_entry = {
 	STANDARD_MODULE_HEADER,
 	"sic",
-	sic_functions,
+	ext_functions,
 	PHP_MINIT(sic),
 	PHP_MSHUTDOWN(sic),
 	NULL,
