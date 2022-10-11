@@ -35,3 +35,11 @@ tests/*/*.exp
 tests/*/*.log
 tests/*/*.sh
 .vscode/
+tests/*.sh
+tests/*.php
+tests/*.log
+tests/*.exp
+tests/*.diff
+tests/*.out
+sic.dep
+config.h.in~
