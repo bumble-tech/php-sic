@@ -1,5 +1,9 @@
 --TEST--
 sic_set() with TTL 
+--INI--
+sic.enabled=1
+sic.shard_num=1
+sic.shard_size=1k
 --FILE--
 <?php
 
