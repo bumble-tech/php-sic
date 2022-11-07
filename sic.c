@@ -35,6 +35,7 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/mman.h>
+#include <stdbool.h>
 #if PHP_VERSION_ID >= 80000
 # include "sic_arginfo.h"
 #else
