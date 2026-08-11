@@ -10,7 +10,7 @@ jobs:
       - name: Checkout php-sic extension
         uses: actions/checkout@v2
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: ${{matrix.version}}
       - name: phpize
